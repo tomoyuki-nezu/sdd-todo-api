@@ -24,7 +24,7 @@ def _get_table() -> Any:
     """
     dynamodb = boto3.resource(
         "dynamodb",
-        endpoint_url=os.environ.get("DYNAMODB_ENDPOINT"),
+        endpoint_url=os.environ.get("DYNAMODB_ENDPOINT") or None,
         region_name=os.environ.get("AWS_DEFAULT_REGION", "ap-northeast-1"),
     )
     return dynamodb.Table(os.environ.get("TABLE_NAME", "TasksTable"))

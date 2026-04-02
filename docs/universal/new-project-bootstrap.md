@@ -20,9 +20,9 @@ Cursor で `CLAUDE.md` を開き、プロジェクト固有設定セクション
 |---|---|---|
 | `<PROJECT_NAME>` | プロジェクト名 | タスク管理 API |
 | `<LANGUAGE>` | 使用言語 | Python 3.13 |
-| `<FRAMEWORK>` | フレームワーク | AWS Lambda |
-| `<DATASTORE>` | データストア | DynamoDB |
-| `<FUNCTION_NAME>` | Lambda 関数名 | TasksFunction |
+| `<FRAMEWORK>` | フレームワーク | FastAPI / Express / Lambda |
+| `<DATASTORE>` | データストア | PostgreSQL / DynamoDB / MongoDB |
+| `<FUNCTION_NAME>` | 関数/サービス名 | TasksService |
 
 ### Step 3：Claude Code に初期化プロンプトを渡す
 
@@ -30,18 +30,13 @@ Cursor で `CLAUDE.md` を開き、プロジェクト固有設定セクション
 claude
 ```
 
-以下のプロンプトを渡す：
+以下のプロンプトを渡す（このまま貼り付けてください）：
 
 ```
-新しいプロジェクトを始めます。以下のドキュメントを読み込んでください：
-- CLAUDE.md
-- docs/universal/new-project-bootstrap.md
-- docs/universal/question-document-spec.md
-- .claude/questions/templates/new-project-template.md
-
-読み込んだ後、new-project-template.md を元に本日の日付で
-質問ドキュメントを .claude/questions/ に作成してください。
-私が回答を記入したら『回答を読んで実行して』と伝えます。
+新しいプロジェクトを始めます。
+CLAUDE.md と .claude/skills/ と docs/universal/ を読み込んでください。
+読み込んだら、.claude/questions/templates/new-project-template.md を元に
+質問ドキュメントを作成してください。
 ```
 
 ### Step 4：質問ドキュメントに回答（Cursor）
@@ -52,7 +47,7 @@ Claude Code が作成した `.claude/questions/YYYYMMDD-new-project.md` を Curs
 1. プロジェクトの基本情報（名前・目的・想定ユーザー）
 2. 技術スタック（言語・実行環境・データストア）
 3. API 設計（エンドポイント・認証方式）
-4. 環境構成（環境数・リージョン・AWS 設定の流用）
+4. 環境構成（環境数・リージョン・クラウド設定の流用）
 5. CI/CD の要件（デプロイトリガー・テスト要件）
 6. ドキュメントの要件（言語・必要なドキュメント）
 
@@ -65,13 +60,28 @@ Claude Code に「回答を読んで実行して」と伝える。以降は Clau
    - 仕様書の作成（`spec/api/<resource>.yaml`）
    - ソースコードの生成（`src/`）
    - テストコードの生成（`tests/`）
-   - SAM テンプレートの作成（`template.yaml`）
-   - CI/CD パイプラインの作成（`.github/workflows/deploy.yml`）
-   - ローカル環境ファイルの作成（`env.local.json`, `.env.*`）
+   - IaC 定義の作成（選択したツールに応じて）
+   - CI/CD パイプラインの作成（`.github/workflows/`）
+   - ローカル環境ファイルの作成
    - E2E テストスクリプトの作成（`tests/e2e/test_api.sh`）
    - README.md とプロジェクト固有ドキュメントの作成
 3. テスト実行・検証
 4. コミット
+
+## プロジェクト生成後の開発フロー
+
+初期化が完了したら、以降は以下のフレーズで Claude Code に指示できます:
+
+| やりたいこと | Claude Code への指示 |
+|---|---|
+| 仕様変更の反映 | `spec/api/xxx.yaml の変更を読み込んで、コードとテストを更新して` |
+| テスト実行 | `テストして` |
+| エラー修正 | `エラーを解析して` |
+| コミット | `コミットして` |
+| プッシュ | `プッシュして` |
+| ドキュメント更新 | `README を更新して` |
+
+複雑な判断が必要な場合は Claude Code が自動的に質問ドキュメントを作成します。Cursor で回答を記入し「回答を読んで実行して」と伝えてください。
 
 ## Step 5 完了後に人間が行う作業
 
@@ -80,63 +90,23 @@ Claude Code に「回答を読んで実行して」と伝える。以降は Clau
 ### GitHub リポジトリの作成と設定
 
 1. GitHub でリポジトリを作成
-2. Settings > Secrets and variables > Actions に以下を登録：
+2. Settings > Secrets and variables > Actions にデプロイ用の認証情報を登録
 
-| Secret 名 | 値 |
-|---|---|
-| `AWS_ROLE_ARN` | OIDC で AssumeRole する IAM ロールの ARN |
-| `AWS_REGION` | `ap-northeast-1` |
+### クラウド環境の認証設定（使用するプロバイダーに応じて）
 
-### AWS IAM OIDC プロバイダーの登録（AWS アカウントで初回のみ）
+GitHub Actions からクラウドへのデプロイに必要な認証を設定する。
 
-- IAM > ID プロバイダー > プロバイダを追加
-- プロバイダのタイプ: OpenID Connect
-- プロバイダの URL: `https://token.actions.githubusercontent.com`
-- 対象者: `sts.amazonaws.com`
+**OIDC（推奨）:** キーレス認証。GitHub Actions の OIDC トークンでクラウドの一時認証情報を取得する。
 
-### AWS IAM Role の作成
+**サービスアカウントキー:** GitHub Secrets にキーを登録する。
 
-信頼ポリシー:
+具体的な設定手順はクラウドプロバイダーのドキュメントを参照すること。
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::<YOUR_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:<YOUR_ORG>/<YOUR_REPO>:*"
-        }
-      }
-    }
-  ]
-}
-```
-
-必要なポリシー: Lambda、API Gateway、DynamoDB、CloudFormation、S3、IAM の権限
-
-### DynamoDB Local のテーブル作成
+### ローカルデータストアのセットアップ
 
 ```bash
 docker compose up -d
-
-AWS_ACCESS_KEY_ID=dummy \
-AWS_SECRET_ACCESS_KEY=dummy \
-aws dynamodb create-table \
-  --table-name <TABLE_NAME> \
-  --attribute-definitions AttributeName=<pk>,AttributeType=S \
-  --key-schema AttributeName=<pk>,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --endpoint-url http://localhost:8000 \
-  --region ap-northeast-1
+# プロジェクトに応じてテーブル作成やマイグレーションを実行
 ```
 
 ### リモートリポジトリへのプッシュ
@@ -151,9 +121,9 @@ git push -u origin main
 すべての設定が完了したら以下を確認する：
 
 - [ ] `pytest tests/unit/` → 全テストパス
-- [ ] `docker compose up -d` → DynamoDB Local 起動
-- [ ] `sam build` → ビルド成功
-- [ ] `sam local start-api --env-vars env.local.json` → 起動成功
+- [ ] `docker compose up -d` → ローカルサービス起動
+- [ ] ビルド成功（使用するビルドツールで確認）
+- [ ] ローカルサーバー起動成功
 - [ ] `ENV=local bash tests/e2e/test_api.sh` → 全テストパス
 - [ ] `git push` → GitHub Actions 成功
 - [ ] `ENV=production bash tests/e2e/test_api.sh` → 全テストパス

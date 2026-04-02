@@ -221,3 +221,23 @@ GitHub Actions Runner
 |---|---|
 | `AWS_ROLE_ARN` | OIDC で AssumeRole する IAM ロールの ARN |
 | `AWS_REGION` | デプロイ先リージョン |
+
+## 次のプロジェクトへの引き継ぎ
+
+### 流用できるファイル
+
+以下のファイルは次のプロジェクトでもそのまま・または最小限の修正で使用できる：
+
+| ファイル | 流用方法 |
+|---|---|
+| `CLAUDE.md` | プロジェクト名・スタックを書き換える |
+| `spec/constitution.md` | そのまま流用可能 |
+| `.claude/skills/*.md` | そのまま流用可能 |
+| `docker-compose.yml` | そのまま流用可能 |
+| `.gitignore` | そのまま流用可能 |
+| `.github/workflows/deploy.yml` | Python バージョン・スタック名を変更 |
+| `tests/e2e/test_api.sh` | エンドポイントに合わせて修正 |
+
+### 初期化の手順
+
+`docs/new-project-bootstrap.md` を参照すること。

@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Task Management REST API (TODO CRUD)
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.13
+    Tracing: Active
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref TasksTable
+        DYNAMODB_ENDPOINT: ""
+        AWS_ACCOUNT_ID: !Ref AWS::AccountId
+
+Resources:
+  TasksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/tasks.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        ListTasks:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: GET
+        CreateTask:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: POST
+        GetTask:
+          Type: Api
+          Properties:
+            Path: /tasks/{task_id}
+            Method: GET
+        UpdateTask:
+          Type: Api
+          Properties:
+            Path: /tasks/{task_id}
+            Method: PUT
+        DeleteTask:
+          Type: Api
+          Properties:
+            Path: /tasks/{task_id}
+            Method: DELETE
+
+  TasksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: TasksTable
+      AttributeDefinitions:
+        - AttributeName: task_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: task_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+Outputs:
+  TasksApi:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/tasks"
+  TasksFunction:
+    Description: Tasks Lambda Function ARN
+    Value: !GetAtt TasksFunction.Arn

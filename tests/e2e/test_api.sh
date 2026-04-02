@@ -1,6 +1,16 @@
 #!/bin/bash
 set -euo pipefail
 
+# .env ファイルの自動読み込み
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+if [ -f "${ROOT_DIR}/.env.local" ] && [ "${ENV:-}" = "local" ]; then
+  source "${ROOT_DIR}/.env.local"
+elif [ -f "${ROOT_DIR}/.env.production" ] && [ "${ENV:-}" = "production" ]; then
+  source "${ROOT_DIR}/.env.production"
+fi
+
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'

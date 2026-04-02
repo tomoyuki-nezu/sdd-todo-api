@@ -165,14 +165,19 @@ CRUD の全フローを自動検証するシェルスクリプトです。事前
 ### ローカル環境
 
 ```bash
-source .env.local
-bash tests/e2e/test_api.sh
+ENV=local bash tests/e2e/test_api.sh
 ```
 
 ### 本番環境
 
 ```bash
-source .env.production
+ENV=production bash tests/e2e/test_api.sh
+```
+
+### BASE_URL を直接指定する場合
+
+```bash
+BASE_URL=https://xxxx.execute-api.ap-northeast-1.amazonaws.com/Prod \
 bash tests/e2e/test_api.sh
 ```
 

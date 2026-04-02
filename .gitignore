@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+
+# SAM ビルド成果物
+.aws-sam/
+samconfig.toml
+
+# 環境変数・シークレット
+.env
+.env.*
+
+# ローカル環境設定
+env.local.json
+
+# IDE
+.cursor/
+.vscode/
+
+# OS
+.DS_Store

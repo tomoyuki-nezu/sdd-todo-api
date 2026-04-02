@@ -1,0 +1,115 @@
+# spec/api/tasks.yaml
+
+metadata:
+  feature: task-management
+  version: 1.0.0
+  status: approved
+
+overview:
+  description: "タスク管理 API（TODO CRUD）"
+  base_path: /tasks
+
+endpoints:
+
+  - id: list-tasks
+    method: GET
+    path: /tasks
+    description: "タスク一覧を取得する"
+    response:
+      success:
+        status: 200
+        schema:
+          tasks:
+            type: array
+            items:
+              task_id: { type: string, format: uuid }
+              title: { type: string }
+              done: { type: boolean }
+              created_at: { type: string, format: datetime }
+
+  - id: create-task
+    method: POST
+    path: /tasks
+    description: "新しいタスクを作成する"
+    request:
+      schema:
+        title: { type: string, required: true, max_length: 200 }
+        done: { type: boolean, default: false }
+    response:
+      success:
+        status: 201
+        schema:
+          task_id: { type: string, format: uuid }
+          title: { type: string }
+          done: { type: boolean }
+          created_at: { type: string, format: datetime }
+      errors:
+        - status: 400
+          code: MISSING_TITLE
+
+  - id: get-task
+    method: GET
+    path: /tasks/{task_id}
+    description: "特定のタスクを取得する"
+    response:
+      success:
+        status: 200
+        schema:
+          task_id: { type: string }
+          title: { type: string }
+          done: { type: boolean }
+          created_at: { type: string, format: datetime }
+      errors:
+        - status: 404
+          code: TASK_NOT_FOUND
+
+  - id: update-task
+    method: PUT
+    path: /tasks/{task_id}
+    description: "タスクを更新する"
+    request:
+      schema:
+        title: { type: string, max_length: 200 }
+        done: { type: boolean }
+    response:
+      success:
+        status: 200
+        schema:
+          task_id: { type: string }
+          title: { type: string }
+          done: { type: boolean }
+          created_at: { type: string, format: datetime }
+      errors:
+        - status: 404
+          code: TASK_NOT_FOUND
+        - status: 400
+          code: NO_UPDATE_FIELDS
+
+  - id: delete-task
+    method: DELETE
+    path: /tasks/{task_id}
+    description: "タスクを削除する"
+    response:
+      success:
+        status: 200
+        schema:
+          message: { type: string }
+      errors:
+        - status: 404
+          code: TASK_NOT_FOUND
+
+examples:
+  - name: "タスク作成→一覧取得→更新→削除の基本フロー"
+    steps:
+      - POST /tasks { title: "牛乳を買う" } → 201
+      - GET /tasks → 200（1件含む）
+      - PUT /tasks/{id} { done: true } → 200
+      - DELETE /tasks/{id} → 200
+
+technical_constraints:
+  runtime: python3.12
+  datastore: dynamodb
+  table_name: TasksTable
+  partition_key: task_id
+  logging: structured
+  tracing: xray

@@ -68,6 +68,12 @@
 - 自動修正は最大 3 回まで
 - 詳細は `.claude/skills/common/error-handling.md` を参照
 
+### 質問ドキュメントルール
+- 複数の質問が相互に関連する場合、一問一答ではなく質問ドキュメントを作成する
+- 全体的な方向性・設計判断を決める場合も質問ドキュメントを使う
+- `docs/questions/YYYY-MM-DD_<トピック>.md` に作成し、ユーザーの回答を待つ
+- 詳細は `.claude/skills/common/question-doc.md` を参照
+
 ### 禁止事項
 - ハードコードされた AWS アカウント ID・ARN
 - ハードコードされたシークレット・パスワード
@@ -86,6 +92,7 @@
 | `error-handling.md` | エラー解析・修正ワークフロー |
 | `test-workflow.md` | テスト実行・結果報告 |
 | `doc-writer.md` | ドキュメント生成スタイル |
+| `question-doc.md` | 質問ドキュメントによる意思決定フロー |
 
 ### プロジェクト固有 Skills（`.claude/skills/project/`）
 このプロジェクトの技術スタックに依存するルール：

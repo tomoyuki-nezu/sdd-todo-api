@@ -228,16 +228,19 @@ GitHub Actions Runner
 
 以下のファイルは次のプロジェクトでもそのまま・または最小限の修正で使用できる：
 
-| ファイル | 流用方法 |
-|---|---|
-| `CLAUDE.md` | プロジェクト名・スタックを書き換える |
-| `spec/constitution.md` | そのまま流用可能 |
-| `.claude/skills/*.md` | そのまま流用可能 |
-| `docker-compose.yml` | そのまま流用可能 |
-| `.gitignore` | そのまま流用可能 |
-| `.github/workflows/deploy.yml` | Python バージョン・スタック名を変更 |
-| `tests/e2e/test_api.sh` | エンドポイントに合わせて修正 |
+| ファイル | 種別 | 流用方法 |
+|---|---|---|
+| `CLAUDE.md` | 半汎用 | プロジェクト固有設定を書き換える |
+| `spec/constitution.md` | 汎用 | そのまま流用可能 |
+| `.claude/skills/common/` | 汎用 | そのまま流用可能 |
+| `.claude/skills/project/` | 固有 | スタックに合わせて修正 |
+| `docker-compose.yml` | 汎用 | そのまま流用可能 |
+| `.gitignore` | 汎用 | そのまま流用可能 |
+| `docs/universal/` | 汎用 | そのまま流用可能 |
+| `docs/project/` | 固有 | 新規作成 |
+| `.github/workflows/deploy.yml` | 半汎用 | バージョン・スタック名を変更 |
+| `tests/e2e/test_api.sh` | 固有 | エンドポイントに合わせて修正 |
 
 ### 初期化の手順
 
-`docs/new-project-bootstrap.md` を参照すること。
+`docs/universal/new-project-bootstrap.md` を参照すること。

@@ -286,3 +286,21 @@ aws dynamodb create-table \
 - [ ] `ENV=local bash tests/e2e/test_api.sh` → 全テストパス
 - [ ] `git push` → GitHub Actions 成功
 - [ ] `ENV=production bash tests/e2e/test_api.sh` → 全テストパス
+
+## 汎用ファイルと固有ファイルの分類
+
+次のプロジェクトに引き継ぐファイル：
+
+| ファイル | 種別 | 引き継ぎ方法 |
+|---|---|---|
+| `CLAUDE.md` | 半汎用 | プロジェクト固有設定を書き換える |
+| `spec/constitution.md` | 汎用 | そのまま流用 |
+| `.claude/skills/common/` | 汎用 | そのまま流用 |
+| `.claude/skills/project/` | 固有 | スタックに合わせて修正 |
+| `docker-compose.yml` | 汎用 | そのまま流用 |
+| `.gitignore` | 汎用 | そのまま流用 |
+| `.github/workflows/deploy.yml` | 半汎用 | バージョン・スタック名を変更 |
+| `docs/universal/` | 汎用 | そのまま流用 |
+| `docs/project/` | 固有 | 新規作成 |
+| `README.md` | 固有 | 新規作成 |
+| `tests/e2e/test_api.sh` | 固有 | エンドポイントに合わせて修正 |

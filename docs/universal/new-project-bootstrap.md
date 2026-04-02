@@ -36,9 +36,26 @@ mkdir -p .claude/skills && cp $REFERENCE/.claude/skills/*.md .claude/skills/
 mkdir -p docs && cp $REFERENCE/docs/architecture.md $REFERENCE/docs/development-guide.md docs/
 ```
 
-### Step 2：Claude Code への初期化プロンプト
+### Step 2：Claude Code への初期化プロンプト（質問ドキュメント方式）
 
-新しいプロジェクトのルートディレクトリで `claude` を起動し、以下のプロンプトを順番に渡す。
+新しいプロジェクトのルートディレクトリで `claude` を起動し、以下のプロンプトを渡す：
+
+```
+新しいプロジェクトを始めます。以下のドキュメントを読み込んでください：
+- docs/universal/new-project-bootstrap.md
+- docs/universal/question-document-spec.md
+- .claude/questions/templates/new-project-template.md
+
+読み込んだ後、new-project-template.md を元に本日の日付で
+質問ドキュメントを .claude/questions/ に作成してください。
+私が回答を記入したら『回答を読んで実行して』と伝えます。
+```
+
+回答を記入後、「回答を読んで実行して」と伝えると、Claude Code が回答に基づいてプロジェクト全体を自動生成します。
+
+### Step 2（代替）：個別プロンプト方式
+
+質問ドキュメントを使わず、プロンプトを順番に渡す方法もあります。
 
 ---
 
@@ -48,8 +65,7 @@ mkdir -p docs && cp $REFERENCE/docs/architecture.md $REFERENCE/docs/development-
 以下のドキュメントを読み込んでください：
 - CLAUDE.md
 - spec/constitution.md
-- docs/architecture.md
-- docs/development-guide.md
+- docs/universal/
 - .claude/skills/ 以下のすべての Skills
 
 読み込んだ後、以下のプロジェクト構造を作成してください：

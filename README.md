@@ -158,6 +158,27 @@ python -m pytest tests/unit/test_tasks.py::TestCreateTask -v
 python -m pytest tests/unit/test_tasks.py::TestCreateTask::test_create_task_success -v
 ```
 
+## E2E テストの実行方法
+
+CRUD の全フローを自動検証するシェルスクリプトです。事前に `jq` が必要です（`brew install jq`）。
+
+### ローカル環境
+
+```bash
+source .env.local
+bash tests/e2e/test_api.sh
+```
+
+### 本番環境
+
+```bash
+source .env.production
+bash tests/e2e/test_api.sh
+```
+
+> `.env.local` と `.env.production` は `.gitignore` 済みです。各自で作成してください。
+> フォーマット例: `BASE_URL=http://127.0.0.1:3000`
+
 ## 開発効率化の設定（任意）
 
 `~/.zshrc` に以下を追加すると、毎回の環境変数指定を省略できます：

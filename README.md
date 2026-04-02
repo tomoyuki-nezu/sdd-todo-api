@@ -1,73 +1,207 @@
 # Task Management API (TODO CRUD)
 
-仕様書ドリブン開発（SDD）で構築するタスク管理 REST API
+## プロジェクト概要
 
-## 技術スタック
+仕様書ドリブン開発（SDD）で構築するタスク管理 REST API。
 
-| カテゴリ | 技術 |
-|---|---|
-| 言語 | Python 3.13 |
-| フレームワーク | AWS Lambda (ハンドラ形式) |
-| IaC | AWS SAM (template.yaml) |
-| データストア | Amazon DynamoDB |
-| テスト | pytest |
-| ローカル DB | DynamoDB Local (Docker) |
+- **目的**: SDD + AI マルチエージェント + CI/CD を組み合わせた開発フローの実践
+- **アーキテクチャ**: Cursor で仕様書を作成し、Claude Code がコード生成・テスト・Git 操作を自律実行。GitHub Actions が CI/CD を担い、AWS にサーバーレスアプリケーションをデプロイする
+- **設計思想**: `spec/` 配下の仕様書を Single Source of Truth とし、コードはすべて仕様書から生成する
+
+### 技術スタック
+
+| カテゴリ | 技術 | 役割 |
+|---|---|---|
+| 言語 | Python 3.13 | Lambda ランタイム |
+| コンピュート | AWS Lambda | API ハンドラの実行 |
+| API | Amazon API Gateway | REST エンドポイントの公開 |
+| データストア | Amazon DynamoDB | タスクデータの永続化 |
+| IaC | AWS SAM | インフラ定義・ビルド・デプロイ |
+| CI/CD | GitHub Actions | 自動テスト・自動デプロイ |
+| テスト | pytest / シェルスクリプト | ユニットテスト / E2E テスト |
+| ローカル DB | DynamoDB Local (Docker) | ローカル開発用のデータストア |
+| 仕様書管理 | Cursor | YAML 仕様書の編集 |
+| コード生成 | Claude Code | コード生成・Git 操作の自律実行 |
+
+## システム構成図
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    開発環境 (Mac)                         │
+│                                                         │
+│  ┌──────────┐    ┌─────────────┐    ┌────────────────┐  │
+│  │  Cursor   │───▶│ spec/*.yaml │───▶│  Claude Code   │  │
+│  │(仕様書編集)│    │ (仕様書)     │    │(コード生成/Git) │  │
+│  └──────────┘    └─────────────┘    └───────┬────────┘  │
+│                                             │           │
+│  ┌──────────────────┐    ┌──────────────┐   │           │
+│  │  Docker           │    │  SAM CLI     │   │           │
+│  │  ┌──────────────┐ │    │  (ローカル    │   │           │
+│  │  │DynamoDB Local │ │◀──│   API実行)   │   │           │
+│  │  └──────────────┘ │    └──────────────┘   │           │
+│  └──────────────────┘                        │           │
+└──────────────────────────────────────────────┼───────────┘
+                                               │ git push
+                                               ▼
+                                        ┌──────────────┐
+                                        │   GitHub      │
+                                        │   (VCS)       │
+                                        └──────┬───────┘
+                                               │ trigger
+                                               ▼
+                                    ┌────────────────────┐
+                                    │  GitHub Actions     │
+                                    │  ┌──────┐ ┌──────┐ │
+                                    │  │ test │─▶│deploy│ │
+                                    │  └──────┘ └──┬───┘ │
+                                    └──────────────┼─────┘
+                                                   │ OIDC
+                                                   ▼
+                                    ┌────────────────────┐
+                                    │    AWS              │
+                                    │  ┌──────────────┐  │
+                                    │  │ API Gateway   │  │
+                                    │  └──────┬───────┘  │
+                                    │         ▼          │
+                                    │  ┌──────────────┐  │
+                                    │  │   Lambda      │  │
+                                    │  └──────┬───────┘  │
+                                    │         ▼          │
+                                    │  ┌──────────────┐  │
+                                    │  │  DynamoDB     │  │
+                                    │  └──────────────┘  │
+                                    └────────────────────┘
+```
 
 ## 前提条件
 
 以下のツールがインストールされていること：
 
-| ツール | バージョン確認 | インストール |
-|---|---|---|
-| pyenv | `pyenv --version` | `brew install pyenv` |
-| Python 3.13.12 | `python --version` | `pyenv install 3.13.12` |
-| AWS SAM CLI >= 1.157 | `sam --version` | `brew install aws-sam-cli` |
-| Docker Desktop | `docker --version` | [公式サイト](https://www.docker.com/products/docker-desktop/) |
-| AWS CLI v2 | `aws --version` | `brew install awscli` |
+| ツール | バージョン | 用途 | インストール |
+|---|---|---|---|
+| Python | 3.13 | ランタイム | `pyenv install 3.13.12` |
+| Node.js | 18+ | Claude Code CLI | [公式サイト](https://nodejs.org/) |
+| Docker Desktop | 最新 | DynamoDB Local / SAM local | [公式サイト](https://www.docker.com/products/docker-desktop/) |
+| AWS CLI | v2 | AWS 操作・SSO 認証 | `brew install awscli` |
+| AWS SAM CLI | >= 1.157 | ビルド・デプロイ | `brew install aws-sam-cli` |
+| Claude Code | 最新 | コード生成・Git 操作 | `npm install -g @anthropic-ai/claude-code` |
+| Cursor | 最新 | 仕様書の編集 | [公式サイト](https://cursor.sh/) |
+| jq | 最新 | E2E テストの JSON 解析 | `brew install jq` |
+| git | 最新 | バージョン管理 | `brew install git` |
+| pyenv | 最新 | Python バージョン管理 | `brew install pyenv` |
 
-## セットアップ手順
+## 初回セットアップ手順（ゼロから始める場合）
 
 ### 1. リポジトリのクローン
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/<YOUR_USER>/sdd-todo-api.git
 cd sdd-todo-api
 ```
 
-### 2. Python 仮想環境の作成と依存パッケージのインストール
+### 2. Python 仮想環境の作成
 
 ```bash
 # pyenv local により .python-version で Python 3.13.12 が自動選択される
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install pytest boto3
+pip install -r src/requirements.txt
+pip install pytest
 ```
 
-### 3. AWS SSO の設定
+### 3. Claude Code のインストールとログイン
+
+```bash
+npm install -g @anthropic-ai/claude-code
+claude login
+```
+
+### 4. AWS SSO の設定
 
 ```bash
 aws configure sso
 ```
 
-プロンプトに従い、以下を入力：
+プロンプトに従い入力：
 
 | 項目 | 値 |
 |---|---|
-| SSO session name | 任意の名前 |
-| SSO start URL | 管理者から共有された URL |
-| SSO region | ap-northeast-1 |
-| CLI default client Region | ap-northeast-1 |
-| CLI default output format | json |
-| CLI profile name | 任意のプロファイル名 |
+| SSO session name | `development-<yourname>` |
+| SSO start URL | `<YOUR_SSO_URL>` |
+| SSO region | `ap-northeast-1` |
+| CLI default client Region | `ap-northeast-1` |
+| CLI default output format | `json` |
+| CLI profile name | `<YOUR_PROFILE_NAME>` |
 
-### 4. DynamoDB Local のセットアップ
+ログイン確認：
 
 ```bash
-# DynamoDB Local を起動
-docker compose up -d
+aws sts get-caller-identity --profile <YOUR_PROFILE_NAME>
+```
 
-# テーブルの作成（初回のみ）
-AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy \
+### 5. GitHub Secrets の設定
+
+リポジトリの Settings > Secrets and variables > Actions に以下を登録：
+
+| Secret 名 | 値 |
+|---|---|
+| `AWS_ROLE_ARN` | IAM Role の ARN（OIDC 用） |
+| `AWS_REGION` | `ap-northeast-1` |
+
+### 6. Docker Desktop の設定
+
+1. Docker Desktop を起動
+2. Settings > Advanced > 「Allow the default Docker socket to be used」を ON
+
+### 7. DOCKER_HOST の設定（Mac の場合）
+
+```bash
+# ~/.zshrc に追記
+export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
+source ~/.zshrc
+```
+
+### 8. env.local.json の作成（ローカル SAM 用・git 管理外）
+
+```json
+{
+  "TasksFunction": {
+    "TABLE_NAME": "TasksTable",
+    "DYNAMODB_ENDPOINT": "http://host.docker.internal:8000",
+    "AWS_DEFAULT_REGION": "ap-northeast-1",
+    "AWS_ACCESS_KEY_ID": "dummy",
+    "AWS_SECRET_ACCESS_KEY": "dummy"
+  }
+}
+```
+
+### 9. .env ファイルの作成（E2E テスト用・git 管理外）
+
+`.env.local`:
+
+```
+BASE_URL=http://127.0.0.1:3000
+```
+
+`.env.production`:
+
+```
+BASE_URL=https://<YOUR_API_ID>.execute-api.ap-northeast-1.amazonaws.com/Prod
+```
+
+## ローカル開発のワークフロー
+
+### 1. DynamoDB Local の起動
+
+```bash
+docker compose up -d
+```
+
+### 2. テーブルの作成（初回のみ・docker volume 削除後も必要）
+
+```bash
+AWS_ACCESS_KEY_ID=dummy \
+AWS_SECRET_ACCESS_KEY=dummy \
 aws dynamodb create-table \
   --table-name TasksTable \
   --attribute-definitions AttributeName=task_id,AttributeType=S \
@@ -77,50 +211,107 @@ aws dynamodb create-table \
   --region ap-northeast-1
 ```
 
-### 5. SAM ローカル実行用の環境変数ファイルの作成
-
-`env.local.json` を作成（.gitignore 済み）：
-
-```json
-{
-  "TasksFunction": {
-    "TABLE_NAME": "TasksTable",
-    "DYNAMODB_ENDPOINT": "http://host.docker.internal:8000",
-    "AWS_ACCESS_KEY_ID": "dummy",
-    "AWS_SECRET_ACCESS_KEY": "dummy"
-  }
-}
-```
-
-## ローカル開発の実行方法
-
-### DynamoDB Local の起動
+### 3. テーブルの存在確認
 
 ```bash
-docker compose up -d
+AWS_ACCESS_KEY_ID=dummy \
+AWS_SECRET_ACCESS_KEY=dummy \
+aws dynamodb list-tables \
+  --endpoint-url http://localhost:8000 \
+  --region ap-northeast-1
 ```
 
-### SSO ログイン
+### 4. SSO ログイン（トークン期限切れ時）
 
 ```bash
 aws sso login --profile <YOUR_PROFILE_NAME>
 ```
 
-### SAM ビルドとローカル API サーバーの起動
+### 5. SAM ビルドとローカル起動
 
 ```bash
-source .venv/bin/activate
-
-sam build
-
+sam build && \
 DOCKER_HOST=unix://$HOME/.docker/run/docker.sock \
 AWS_PROFILE=<YOUR_PROFILE_NAME> \
 sam local start-api --env-vars env.local.json
 ```
 
-## API の動作確認
+### 6. ユニットテストの実行
 
-ローカル API サーバー起動後（http://127.0.0.1:3000）：
+```bash
+source .venv/bin/activate
+pytest tests/unit/ -v
+```
+
+### 7. E2E テストの実行（ローカル）
+
+```bash
+ENV=local bash tests/e2e/test_api.sh
+```
+
+## Claude Code を使った開発フロー
+
+### 1. 仕様書の更新
+
+`spec/api/tasks.yaml` を Cursor で編集
+
+### 2. Claude Code でコード生成
+
+```bash
+claude
+```
+
+プロンプト例：
+
+```
+spec/api/tasks.yaml の変更を読み込み、
+src/handlers/tasks.py を更新してください。
+テストも更新してパスすることを確認してください。
+```
+
+### 3. コミット（Claude Code に依頼）
+
+「コミットして」と入力するだけで自動コミット
+
+### 4. プッシュ（Claude Code に依頼）
+
+「プッシュして」と入力するだけで自動プッシュ
+
+### 5. GitHub Actions で自動テスト・デプロイ
+
+GitHub > Actions タブで確認
+
+## デプロイ後の確認
+
+### 1. GitHub Actions の確認
+
+GitHub > Actions タブ > 最新のワークフローを確認
+
+### 2. CloudWatch ログの確認
+
+```bash
+aws logs tail /aws/lambda/sdd-todo-api-TasksFunction-XXXX \
+  --profile <YOUR_PROFILE_NAME> \
+  --since 5m
+```
+
+### 3. API Gateway URL の確認
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name sdd-todo-api \
+  --profile <YOUR_PROFILE_NAME> \
+  --query "Stacks[0].Outputs[?OutputKey=='TasksApi'].OutputValue" \
+  --output text
+```
+
+### 4. E2E テストの実行（本番）
+
+```bash
+ENV=production bash tests/e2e/test_api.sh
+```
+
+## API の動作確認
 
 ```bash
 # タスク作成
@@ -131,7 +322,7 @@ curl -X POST http://127.0.0.1:3000/tasks \
 # タスク一覧取得
 curl http://127.0.0.1:3000/tasks
 
-# タスク取得（task_id は作成時のレスポンスから取得）
+# タスク取得
 curl http://127.0.0.1:3000/tasks/{task_id}
 
 # タスク更新
@@ -143,46 +334,81 @@ curl -X PUT http://127.0.0.1:3000/tasks/{task_id} \
 curl -X DELETE http://127.0.0.1:3000/tasks/{task_id}
 ```
 
-## テストの実行方法
+## トラブルシューティング
+
+### 1. DynamoDB Local の認証エラー
+
+- **症状**: `Unable to locate credentials`
+- **原因**: AWS CLI のデフォルト認証情報が未設定
+- **解決**: コマンド実行時に以下を付与
 
 ```bash
-source .venv/bin/activate
-
-# 全ユニットテスト実行
-python -m pytest tests/unit/ -v
-
-# 特定のテストクラスのみ
-python -m pytest tests/unit/test_tasks.py::TestCreateTask -v
-
-# 特定のテストケースのみ
-python -m pytest tests/unit/test_tasks.py::TestCreateTask::test_create_task_success -v
+AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy aws dynamodb ...
 ```
 
-## E2E テストの実行方法
+### 2. SAM local が Docker に接続できない
 
-CRUD の全フローを自動検証するシェルスクリプトです。事前に `jq` が必要です（`brew install jq`）。
-
-### ローカル環境
+- **症状**: `Error: Running AWS SAM projects locally requires a container runtime.`
+- **原因**: Docker Desktop のソケットパスが異なる
+- **解決**: 以下を指定して起動、または `~/.zshrc` に export して永続化
 
 ```bash
-ENV=local bash tests/e2e/test_api.sh
+DOCKER_HOST=unix://$HOME/.docker/run/docker.sock sam local start-api ...
 ```
 
-### 本番環境
+### 3. env.local.json の環境変数が Lambda に渡らない
+
+- **症状**: `DYNAMODB_ENDPOINT=None` がログに表示される
+- **原因**: `template.yaml` の `Environment/Variables` に `DYNAMODB_ENDPOINT` が未定義
+- **解決**: `template.yaml` に `DYNAMODB_ENDPOINT: ""` を追加（`env.local.json` は定義済み変数の上書きのみ可能）
+
+### 4. DynamoDB Local のテーブルが消える
+
+- **症状**: `ResourceNotFoundException`
+- **原因**: Docker コンテナ再起動でデータが消える
+- **解決**: `docker compose up -d` で再起動後、テーブルを再作成する（`docker-compose.yml` にボリューム設定済みだが、`docker compose down -v` でボリュームを削除した場合は再作成が必要）
+
+### 5. 本番環境で Invalid endpoint エラー
+
+- **症状**: `ValueError: Invalid endpoint:`
+- **原因**: `DYNAMODB_ENDPOINT` が空文字のまま boto3 に渡される
+- **解決**: コード側で `os.environ.get("DYNAMODB_ENDPOINT") or None` を使用（対応済み）
+
+### 6. SSO トークン期限切れ
+
+- **症状**: `Token has expired`
+- **解決**:
 
 ```bash
-ENV=production bash tests/e2e/test_api.sh
+aws sso login --profile <YOUR_PROFILE_NAME>
 ```
 
-### BASE_URL を直接指定する場合
+### 7. GitHub Actions で S3 バケットエラー
+
+- **症状**: `S3 Bucket not specified`
+- **解決**: `sam deploy` に `--resolve-s3` を追加（対応済み）
+
+### 8. SAM CLI が python3.13 をサポートしない
+
+- **症状**: `'python3.13' runtime is not supported`
+- **解決**: SAM CLI をアップグレード
 
 ```bash
-BASE_URL=https://xxxx.execute-api.ap-northeast-1.amazonaws.com/Prod \
-bash tests/e2e/test_api.sh
+brew upgrade aws-sam-cli
 ```
 
-> `.env.local` と `.env.production` は `.gitignore` 済みです。各自で作成してください。
-> フォーマット例: `BASE_URL=http://127.0.0.1:3000`
+## AWS リソース一覧
+
+デプロイにより以下の AWS リソースが作成されます：
+
+| リソース | 名前/説明 | 自動管理 |
+|---|---|---|
+| Lambda 関数 | `TasksFunction` — CRUD ハンドラ | SAM |
+| API Gateway | REST API — 5 エンドポイント | SAM |
+| DynamoDB テーブル | `TasksTable` — パーティションキー: `task_id` | SAM |
+| IAM ロール | Lambda 実行ロール + DynamoDB CRUD ポリシー | SAM |
+| CloudWatch Logs | Lambda 関数のロググループ | AWS 自動 |
+| S3 バケット | SAM デプロイ用アーティファクト格納 | SAM (`--resolve-s3`) |
 
 ## 開発効率化の設定（任意）
 
@@ -194,44 +420,3 @@ export AWS_PROFILE=<YOUR_PROFILE_NAME>
 ```
 
 追加後は `source ~/.zshrc` で反映してください。
-
-## トラブルシューティング
-
-### Docker ソケットエラー (`Cannot connect to the Docker daemon`)
-
-Docker Desktop の最新版ではソケットパスが異なる場合があります：
-
-```bash
-# ソケットパスを明示的に指定
-DOCKER_HOST=unix://$HOME/.docker/run/docker.sock sam local start-api --env-vars env.local.json
-```
-
-または `~/.zshrc` に `export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock` を追加してください。
-
-### DynamoDB Local のテーブルが消えた
-
-Docker コンテナ再作成時にデータが消えた場合：
-
-```bash
-# テーブルを再作成
-AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy \
-aws dynamodb create-table \
-  --table-name TasksTable \
-  --attribute-definitions AttributeName=task_id,AttributeType=S \
-  --key-schema AttributeName=task_id,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --endpoint-url http://localhost:8000 \
-  --region ap-northeast-1
-```
-
-> `docker compose down` ではなく `docker compose down -v` を実行するとボリュームも削除されます。データを残したい場合は `-v` を付けないでください。
-
-### SSO トークンの期限切れ (`Token has expired`)
-
-```bash
-aws sso login --profile <YOUR_PROFILE_NAME>
-```
-
-### DynamoDB Local の認証エラー
-
-DynamoDB Local はダミー認証情報で動作します。`env.local.json` に `AWS_ACCESS_KEY_ID` と `AWS_SECRET_ACCESS_KEY` が `dummy` で設定されていることを確認してください。

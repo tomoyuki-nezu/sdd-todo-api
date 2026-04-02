@@ -21,5 +21,8 @@ env.local.json
 .cursor/
 .vscode/
 
+# pytest
+.pytest_cache/
+
 # OS
 .DS_Store

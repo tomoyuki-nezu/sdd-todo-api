@@ -1,47 +1,40 @@
 # 新規プロジェクト初期化ガイド
 
-新しいプロジェクトを開始する際に、このドキュメントのプロンプトを Claude Code に渡すことで、同じアーキテクチャのプロジェクトを迅速に立ち上げることができる。
+新しいプロジェクトを開始する際の手順書。スターターキットのコピーから Claude Code による自律実行まで、5ステップで完了する。
 
-## このドキュメントの使い方
+## クイックスタート（5ステップ）
 
-### Step 1：参照ドキュメントのコピー
-
-既存プロジェクト（sdd-todo-api）から以下のファイルをコピーする：
-
-| ファイル | 流用方法 |
-|---|---|
-| `CLAUDE.md` | プロジェクト名・スタックを書き換えて使う |
-| `spec/constitution.md` | そのまま流用可能 |
-| `.claude/skills/` | そのまま流用可能 |
-| `docs/architecture.md` | 参照用 |
-| `docs/development-guide.md` | 参照用 |
-| `docker-compose.yml` | そのまま流用可能 |
-| `.gitignore` | そのまま流用可能 |
+### Step 1：スターターキットをコピー
 
 ```bash
-# コピー例
-NEW_PROJECT=~/projects/<NEW_PROJECT_NAME>
-REFERENCE=~/projects/sdd-todo-api
-
-mkdir -p $NEW_PROJECT
-cd $NEW_PROJECT
+cp -r claude-code-starter/ <new-project>/
+cd <new-project>/
 git init
-
-# ファイルのコピー
-cp $REFERENCE/CLAUDE.md .
-cp $REFERENCE/.gitignore .
-cp $REFERENCE/docker-compose.yml .
-mkdir -p spec && cp $REFERENCE/spec/constitution.md spec/
-mkdir -p .claude/skills && cp $REFERENCE/.claude/skills/*.md .claude/skills/
-mkdir -p docs && cp $REFERENCE/docs/architecture.md $REFERENCE/docs/development-guide.md docs/
 ```
 
-### Step 2：Claude Code への初期化プロンプト（質問ドキュメント方式）
+### Step 2：CLAUDE.md のプレースホルダーを書き換え（Cursor）
 
-新しいプロジェクトのルートディレクトリで `claude` を起動し、以下のプロンプトを渡す：
+Cursor で `CLAUDE.md` を開き、プロジェクト固有設定セクションのプレースホルダーを書き換える：
+
+| プレースホルダー | 説明 | 例 |
+|---|---|---|
+| `<PROJECT_NAME>` | プロジェクト名 | タスク管理 API |
+| `<LANGUAGE>` | 使用言語 | Python 3.13 |
+| `<FRAMEWORK>` | フレームワーク | AWS Lambda |
+| `<DATASTORE>` | データストア | DynamoDB |
+| `<FUNCTION_NAME>` | Lambda 関数名 | TasksFunction |
+
+### Step 3：Claude Code に初期化プロンプトを渡す
+
+```bash
+claude
+```
+
+以下のプロンプトを渡す：
 
 ```
 新しいプロジェクトを始めます。以下のドキュメントを読み込んでください：
+- CLAUDE.md
 - docs/universal/new-project-bootstrap.md
 - docs/universal/question-document-spec.md
 - .claude/questions/templates/new-project-template.md
@@ -51,206 +44,59 @@ mkdir -p docs && cp $REFERENCE/docs/architecture.md $REFERENCE/docs/development-
 私が回答を記入したら『回答を読んで実行して』と伝えます。
 ```
 
-回答を記入後、「回答を読んで実行して」と伝えると、Claude Code が回答に基づいてプロジェクト全体を自動生成します。
+### Step 4：質問ドキュメントに回答（Cursor）
 
-### Step 2（代替）：個別プロンプト方式
+Claude Code が作成した `.claude/questions/YYYYMMDD-new-project.md` を Cursor で開き、「Human の回答欄」に記入する。
 
-質問ドキュメントを使わず、プロンプトを順番に渡す方法もあります。
+質問内容（6問）：
+1. プロジェクトの基本情報（名前・目的・想定ユーザー）
+2. 技術スタック（言語・実行環境・データストア）
+3. API 設計（エンドポイント・認証方式）
+4. 環境構成（環境数・リージョン・AWS 設定の流用）
+5. CI/CD の要件（デプロイトリガー・テスト要件）
+6. ドキュメントの要件（言語・必要なドキュメント）
 
----
+### Step 5：「回答を読んで実行して」
 
-#### プロンプト 1：プロジェクト構造の初期化
+Claude Code に「回答を読んで実行して」と伝える。以降は Claude Code が自律的に以下を実行する：
 
-```
-以下のドキュメントを読み込んでください：
-- CLAUDE.md
-- spec/constitution.md
-- docs/universal/
-- .claude/skills/ 以下のすべての Skills
+1. 回答を読み取り、実行内容をサマリー表示
+2. ユーザーの承認後、自動実行：
+   - 仕様書の作成（`spec/api/<resource>.yaml`）
+   - ソースコードの生成（`src/`）
+   - テストコードの生成（`tests/`）
+   - SAM テンプレートの作成（`template.yaml`）
+   - CI/CD パイプラインの作成（`.github/workflows/deploy.yml`）
+   - ローカル環境ファイルの作成（`env.local.json`, `.env.*`）
+   - E2E テストスクリプトの作成（`tests/e2e/test_api.sh`）
+   - README.md とプロジェクト固有ドキュメントの作成
+3. テスト実行・検証
+4. コミット
 
-読み込んだ後、以下のプロジェクト構造を作成してください：
+## Step 5 完了後に人間が行う作業
 
-プロジェクト名: <PROJECT_NAME>
-言語: <LANGUAGE>（例: Python 3.13）
-アーキテクチャ: <ARCHITECTURE>（例: Lambda + API Gateway + DynamoDB）
+以下は Claude Code では実施できないため、手動で行う。
 
-作成するディレクトリ・ファイル:
-  spec/
-    constitution.md（コピー済みのものを確認）
-    api/（空ディレクトリ）
-  src/
-  tests/
-    unit/
-    e2e/
-  .claude/
-    skills/（コピー済みのものを確認）
-  .github/
-    workflows/
-  docs/
+### GitHub リポジトリの作成と設定
 
-CLAUDE.md を以下の内容に更新してください：
-- プロジェクト名: <PROJECT_NAME>
-- 技術スタック: <STACK>
-- ディレクトリ構成: 上記に合わせて更新
-```
-
----
-
-#### プロンプト 2：仕様書の作成
-
-```
-以下の内容で仕様書を作成してください：
-
-プロジェクト: <PROJECT_NAME>
-機能概要: <FEATURE_DESCRIPTION>
-
-spec/api/<RESOURCE>.yaml として
-今回のプロジェクトの仕様書を作成してください。
-
-仕様書には以下を含めること：
-- エンドポイント定義（method / path / request / response）
-- エラーコード定義
-- examples セクション（BDD 形式）
-- technical_constraints セクション
-```
-
----
-
-#### プロンプト 3：コード・インフラの生成
-
-```
-spec/api/<RESOURCE>.yaml を読み込み、
-以下を生成してください：
-
-1. src/handlers/<resource>.py
-   - Lambda ハンドラ
-   - DynamoDB CRUD 操作
-   - エラーハンドリング
-
-2. src/requirements.txt
-
-3. template.yaml（SAM テンプレート）
-   - Lambda 関数定義
-   - API Gateway 設定
-   - DynamoDB テーブル定義
-   - IAM ロール（最小権限）
-   - Environment Variables:
-     TABLE_NAME: !Ref <Resource>Table
-     DYNAMODB_ENDPOINT: ""
-
-4. tests/unit/test_<resource>.py
-   - 仕様書の examples に基づくテスト
-   - DynamoDB はモックを使用
-
-生成後、pytest tests/unit/ を実行して
-全テストがパスすることを確認してください。
-```
-
----
-
-#### プロンプト 4：ローカル環境のセットアップ
-
-```
-以下のファイルを作成してください：
-
-1. docker-compose.yml
-   （既存のものがあれば確認・流用）
-
-2. env.local.json
-   {
-     "<FunctionName>": {
-       "TABLE_NAME": "<ResourceName>Table",
-       "DYNAMODB_ENDPOINT": "http://host.docker.internal:8000",
-       "AWS_DEFAULT_REGION": "ap-northeast-1",
-       "AWS_ACCESS_KEY_ID": "dummy",
-       "AWS_SECRET_ACCESS_KEY": "dummy"
-     }
-   }
-
-3. .env.local
-   BASE_URL=http://127.0.0.1:3000
-
-4. .env.production
-   BASE_URL=https://<YOUR_API_ID>.execute-api.ap-northeast-1.amazonaws.com/Prod
-
-5. tests/e2e/test_api.sh
-   仕様書の examples セクションに基づく E2E テストスクリプト
-
-以下が .gitignore に含まれているか確認してください：
-  env.local.json
-  .env.local
-  .env.production
-  .aws-sam/
-  __pycache__/
-  .venv/
-```
-
----
-
-#### プロンプト 5：CI/CD の設定
-
-```
-.github/workflows/deploy.yml を作成してください。
-
-- test ジョブ: Python <VERSION> / pytest 実行
-- deploy ジョブ: OIDC 認証 / sam build / sam deploy --resolve-s3
-- Python バージョン: <VERSION>（template.yaml の Runtime と一致させること）
-- GitHub Secrets:
-    AWS_ROLE_ARN: OIDC 用 IAM Role ARN
-    AWS_REGION: ap-northeast-1
-
-作成後、コミットしてください。
-```
-
----
-
-#### プロンプト 6：ドキュメントの整備
-
-```
-README.md を作成・更新してください。
-
-以下のセクションを含めること：
-- プロジェクト概要
-- システム構成図
-- 前提条件（ツールとバージョン）
-- 初回セットアップ手順
-- ローカル開発のワークフロー
-- Claude Code を使った開発フロー
-- デプロイ後の確認方法
-- トラブルシューティング
-
-docs/architecture.md を更新してください：
-- 今回のプロジェクト固有のアーキテクチャを反映
-
-作成後にコミット・プッシュしてください。
-```
-
----
-
-### Step 3：初回 AWS セットアップ（プロジェクトごとに必要）
-
-以下は Claude Code では実施できないため、人間が手動で行う。
-
-#### 1. GitHub リポジトリの作成
-
-- リポジトリを作成
-- Settings > Secrets and variables > Actions に以下を登録：
+1. GitHub でリポジトリを作成
+2. Settings > Secrets and variables > Actions に以下を登録：
 
 | Secret 名 | 値 |
 |---|---|
 | `AWS_ROLE_ARN` | OIDC で AssumeRole する IAM ロールの ARN |
 | `AWS_REGION` | `ap-northeast-1` |
 
-#### 2. AWS IAM OIDC プロバイダーの登録（AWS アカウントで初回のみ）
+### AWS IAM OIDC プロバイダーの登録（AWS アカウントで初回のみ）
 
 - IAM > ID プロバイダー > プロバイダを追加
 - プロバイダのタイプ: OpenID Connect
 - プロバイダの URL: `https://token.actions.githubusercontent.com`
 - 対象者: `sts.amazonaws.com`
 
-#### 3. AWS IAM Role の作成
+### AWS IAM Role の作成
 
-- 信頼ポリシー: GitHub OIDC プロバイダーを信頼
+信頼ポリシー:
 
 ```json
 {
@@ -275,15 +121,17 @@ docs/architecture.md を更新してください：
 }
 ```
 
-- 必要なポリシー: Lambda、API Gateway、DynamoDB、CloudFormation、S3、IAM の権限
+必要なポリシー: Lambda、API Gateway、DynamoDB、CloudFormation、S3、IAM の権限
 
-#### 4. DynamoDB Local のテーブル作成（初回のみ）
+### DynamoDB Local のテーブル作成
 
 ```bash
+docker compose up -d
+
 AWS_ACCESS_KEY_ID=dummy \
 AWS_SECRET_ACCESS_KEY=dummy \
 aws dynamodb create-table \
-  --table-name <ResourceName>Table \
+  --table-name <TABLE_NAME> \
   --attribute-definitions AttributeName=<pk>,AttributeType=S \
   --key-schema AttributeName=<pk>,KeyType=HASH \
   --billing-mode PAY_PER_REQUEST \
@@ -291,9 +139,16 @@ aws dynamodb create-table \
   --region ap-northeast-1
 ```
 
-### Step 4：動作確認チェックリスト
+### リモートリポジトリへのプッシュ
 
-新プロジェクトの初期化が完了したら以下を確認する：
+```bash
+git remote add origin https://github.com/<YOUR_ORG>/<YOUR_REPO>.git
+git push -u origin main
+```
+
+## 動作確認チェックリスト
+
+すべての設定が完了したら以下を確認する：
 
 - [ ] `pytest tests/unit/` → 全テストパス
 - [ ] `docker compose up -d` → DynamoDB Local 起動
@@ -305,8 +160,6 @@ aws dynamodb create-table \
 
 ## 汎用ファイルと固有ファイルの分類
 
-次のプロジェクトに引き継ぐファイル：
-
 | ファイル | 種別 | 引き継ぎ方法 |
 |---|---|---|
 | `CLAUDE.md` | 半汎用 | プロジェクト固有設定を書き換える |
@@ -315,8 +168,8 @@ aws dynamodb create-table \
 | `.claude/skills/project/` | 固有 | スタックに合わせて修正 |
 | `docker-compose.yml` | 汎用 | そのまま流用 |
 | `.gitignore` | 汎用 | そのまま流用 |
-| `.github/workflows/deploy.yml` | 半汎用 | バージョン・スタック名を変更 |
 | `docs/universal/` | 汎用 | そのまま流用 |
+| `.github/workflows/deploy.yml` | 半汎用 | バージョン・スタック名を変更 |
 | `docs/project/` | 固有 | 新規作成 |
 | `README.md` | 固有 | 新規作成 |
 | `tests/e2e/test_api.sh` | 固有 | エンドポイントに合わせて修正 |

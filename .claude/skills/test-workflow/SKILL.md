@@ -1,9 +1,14 @@
 ---
 name: test-workflow
 description: >
-  テストを実行するとき、または「テストして」
-  「テストを実行して」などの依頼を受けたとき
-allowed-tools: [Read, Bash]
+  テストを実行するとき。「テストして」「テストを実行して」
+  「pytest を動かして」などの依頼を受けたとき。
+  ユニットテストと E2E テストの実行を管理する。
+allowed-tools: Bash
+metadata:
+  author: claude-code-starter
+  version: 1.0.0
+  category: workflow
 ---
 
 # Test Workflow

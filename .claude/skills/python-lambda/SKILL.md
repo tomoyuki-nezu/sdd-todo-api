@@ -1,9 +1,13 @@
 ---
 name: python-lambda
 description: >
-  Python の Lambda 関数を生成・修正するとき、
-  または src/ 以下のコードを扱うとき
-allowed-tools: [Read, Write]
+  Python の Lambda 関数を生成・修正するとき。
+  src/ 以下のコードや「Lambda を更新して」などの依頼を受けたとき。
+allowed-tools: Read Write
+metadata:
+  author: claude-code-starter
+  version: 1.0.0
+  category: project
 ---
 
 # Python Lambda Skill

@@ -1,10 +1,14 @@
 ---
 name: error-handling
 description: >
-  テストが失敗したとき、実行エラーが発生したとき、
-  または「エラーを解析して」「原因を調べて」
-  などの依頼を受けたとき
-allowed-tools: [Read, Bash, Write, Edit]
+  テストが失敗したとき、実行エラーが発生したとき。
+  「エラーを解析して」「原因を調べて」「テストが失敗している」
+  などの依頼を受けたとき。エラーの分析と修正提案を行う。
+allowed-tools: Bash Read
+metadata:
+  author: claude-code-starter
+  version: 1.0.0
+  category: workflow
 ---
 
 # Error Handling Workflow
@@ -87,4 +91,4 @@ allowed-tools: [Read, Bash, Write, Edit]
 複数の相互関連する質問が必要な場合は、
 コンソールでの一問一答ではなく質問ドキュメントを作成すること。
 
-→ 詳細は `question-doc.md` Skill を参照
+→ 詳細は `question-doc` Skill（`.claude/skills/question-doc/SKILL.md`）を参照

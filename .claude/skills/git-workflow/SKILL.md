@@ -1,9 +1,14 @@
 ---
 name: git-workflow
 description: >
-  「コミットして」「プッシュして」など
-  Git 操作を依頼されたとき
-allowed-tools: [Read, Bash]
+  Git の操作を行うとき。「コミットして」「プッシュして」
+  「ブランチを作って」などの依頼を受けたとき。
+  Conventional Commits 形式でメッセージを生成する。
+allowed-tools: Bash
+metadata:
+  author: claude-code-starter
+  version: 1.0.0
+  category: workflow
 ---
 
 # Git Workflow

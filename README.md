@@ -23,6 +23,56 @@
 | 仕様書管理 | Cursor | YAML 仕様書の編集 |
 | コード生成 | Claude Code | コード生成・Git 操作の自律実行 |
 
+## リポジトリのディレクトリ構造
+
+```
+sdd-todo-api/
+├── README.md
+├── CLAUDE.md
+├── .gitignore
+├── docker-compose.yml
+├── template.yaml
+├── spec/
+│   ├── constitution.md
+│   └── api/
+│       └── tasks.yaml
+├── src/
+├── tests/
+├── .github/
+│   └── workflows/
+├── .claude/
+│   ├── settings.json          # セキュリティ設定
+│   ├── hooks/
+│   │   └── validate-command.sh  # コマンド検証フック
+│   ├── skills/                # Anthropic 正式仕様：フォルダ単位
+│   │   ├── git-workflow/
+│   │   │   └── SKILL.md
+│   │   ├── error-handling/
+│   │   │   └── SKILL.md
+│   │   ├── test-workflow/
+│   │   │   └── SKILL.md
+│   │   ├── doc-writer/
+│   │   │   └── SKILL.md
+│   │   ├── question-doc/
+│   │   │   └── SKILL.md
+│   │   ├── python-lambda/
+│   │   │   └── SKILL.md
+│   │   └── sam-architect/
+│   │       └── SKILL.md
+│   └── questions/
+│       └── templates/
+│           └── new-project-template.md
+└── docs/
+    ├── project/
+    └── universal/
+        ├── new-project-bootstrap.md
+        ├── question-document-spec.md
+        ├── agent-workflow.md
+        ├── error-workflow.md
+        ├── sdd-principles.md
+        └── security-settings.md
+```
+
 ## システム構成図
 
 ```
@@ -449,3 +499,32 @@ export AWS_PROFILE=<YOUR_PROFILE_NAME>
 ```
 
 追加後は `source ~/.zshrc` で反映してください。
+
+## カスタマイズ
+
+### セキュリティ設定のカスタマイズ
+.claude/settings.json の以下を調整してください：
+- sandbox.network.allowedDomains: プロジェクトで使うドメインを追加
+- permissions.deny: プロジェクト固有のブロックルールを追加
+- .claude/hooks/validate-command.sh: カスタムチェックを追加
+
+詳細は docs/universal/security-settings.md を参照してください。
+
+### プロジェクト固有 Skills の追加
+.claude/skills/ に新しいフォルダを作成し、
+その中に SKILL.md を配置してください（Anthropic 正式仕様）。
+
+フォルダ名のルール：
+- kebab-case を使うこと（例: python-lambda）
+- スペース・アンダースコア・大文字は使わないこと
+- フォルダ内に README.md は置かないこと
+
+SKILL.md の frontmatter 必須項目：
+```
+---
+name: your-skill-name      # kebab-case・スペース禁止
+description: >             # what + when を含める・1024文字以内
+  何をするスキルか。
+  いつ使うか（トリガーフレーズを含める）。
+---
+```

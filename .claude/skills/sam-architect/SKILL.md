@@ -1,9 +1,13 @@
 ---
 name: sam-architect
 description: >
-  SAM template.yaml を生成・修正するとき、
-  または AWS インフラ定義を扱うとき
-allowed-tools: [Read, Write, Bash]
+  SAM の template.yaml を生成・修正するとき。
+  AWS インフラ定義や「SAM を更新して」などの依頼を受けたとき。
+allowed-tools: Bash Read Write
+metadata:
+  author: claude-code-starter
+  version: 1.0.0
+  category: project
 ---
 
 # SAM Architect Skill

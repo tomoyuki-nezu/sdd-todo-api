@@ -134,8 +134,7 @@ git push -u origin main
 |---|---|---|
 | `CLAUDE.md` | 半汎用 | プロジェクト固有設定を書き換える |
 | `spec/constitution.md` | 汎用 | そのまま流用 |
-| `.claude/skills/common/` | 汎用 | そのまま流用 |
-| `.claude/skills/project/` | 固有 | スタックに合わせて修正 |
+| `.claude/skills/<name>/SKILL.md` | 半汎用〜固有 | 汎用スキルはそのまま流用、プロジェクト用スキルはスタックに合わせて修正 |
 | `docker-compose.yml` | 汎用 | そのまま流用 |
 | `.gitignore` | 汎用 | そのまま流用 |
 | `docs/universal/` | 汎用 | そのまま流用 |

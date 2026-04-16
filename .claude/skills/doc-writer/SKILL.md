@@ -1,10 +1,14 @@
 ---
 name: doc-writer
 description: >
-  ドキュメントを作成・更新するとき、または
-  「ドキュメントを書いて」「READMEを更新して」
-  などの依頼を受けたとき
-allowed-tools: [Read, Write, Edit]
+  ドキュメントを作成・更新するとき。「README を更新して」
+  「ドキュメントを書いて」「仕様書を整理して」などの
+  依頼を受けたとき。日本語で統一されたスタイルで記述する。
+allowed-tools: Read Write
+metadata:
+  author: claude-code-starter
+  version: 1.0.0
+  category: documentation
 ---
 
 # Document Writer

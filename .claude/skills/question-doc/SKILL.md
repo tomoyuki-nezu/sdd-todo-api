@@ -1,12 +1,14 @@
 ---
 name: question-doc
 description: >
-  複数の質問や方向性の確認が必要なとき、
-  一問一答では非効率な場合に質問ドキュメントを作成して
-  ユーザーに回答を求めるワークフロー。
-  「回答を読んで実行して」と言われたときに
-  質問ドキュメントを読み取って実行する。
-allowed-tools: [Read, Write, Edit]
+  複数の質問や方向性の確認が必要なとき。
+  質問ドキュメントを作成してユーザーに回答を求めるとき。
+  「回答を読んで実行して」と言われたときにドキュメントを読み取って実行する。
+allowed-tools: Read Write Edit
+metadata:
+  author: claude-code-starter
+  version: 1.0.0
+  category: workflow
 ---
 
 # Question Document Workflow
